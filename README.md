@@ -1,2 +1,3 @@
 # cryptou
-UMD Crypto library (supports AMD, RequireJS, and CommonJS)
+
+UMD Crypto library (supports AMD, Node, CommonJS, modulejs, YUI, and browsers)
