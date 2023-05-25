@@ -83,10 +83,6 @@
 })("cryptou", typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  function version() {
-    return "0.1.0";
-  }
-
   /*
    * ***********************************************************************************************
    *
@@ -117,14 +113,6 @@
         Math.floor(Math.random() * 4294967295),
       ]; // All outdated browsers
     return (rng_nums[0] >>> 5) * 67108864.0 + (rng_nums[1] >>> 6);
-  }
-
-  function random(size = 32) {
-    const block = [];
-    for (let i = 0; i < size; i++) {
-      block.push(genrand());
-    }
-    return new Uint8Array(block);
   }
 
   /*
@@ -1663,6 +1651,52 @@
     },
   };
 
+  /*
+   * ***********************************************************************************************
+   *
+   * Public Methods
+   *
+   * ***********************************************************************************************
+   */
+
+  function version() {
+    return "0.1.1";
+  }
+
+  function random(size = 32) {
+    const block = [];
+    for (let i = 0; i < size; i++) {
+      block.push(genrand());
+    }
+    return new Uint8Array(block);
+  }
+
+  function randomString(size = 32) {
+    // adapted from: https://stackoverflow.com/a/72711889
+    const charset =
+      "$123456789ABCDEFGH+JKLMN-P~RSTUVWXYZabcdefgh%jk*mn_p&rst#@wxyz";
+    const indexes = random(size);
+    let string = "";
+    for (const index of indexes) {
+      string += charset[index % charset.length];
+    }
+    return string;
+  }
+
+  function sha256(data = "") {
+    const dataUint8Array =
+      typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
+    return aesjs.utils.hex.fromBytes(hash(dataUint8Array));
+  }
+
+  function sha256hmac(data = "", key = "") {
+    const dataUint8Array =
+      typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
+    const keyUint8Array =
+      typeof key === "object" ? key : aesjs.utils.utf8.toBytes(key);
+    return aesjs.utils.hex.fromBytes(hmac(keyUint8Array, dataUint8Array));
+  }
+
   function encode(data) {
     const string = data && JSON.stringify(data) ? JSON.stringify(data) : "";
     const bytes = aesjs.utils.utf8.toBytes(string);
@@ -1743,32 +1777,6 @@
     } else {
       return null;
     }
-  }
-
-  function randomString(size = 32) {
-    // adapted from: https://stackoverflow.com/a/72711889
-    const charset =
-      "$123456789ABCDEFGH+JKLMN-P~RSTUVWXYZabcdefgh%jk*mn_p&rst#@wxyz";
-    const indexes = random(size);
-    let string = "";
-    for (const index of indexes) {
-      string += charset[index % charset.length];
-    }
-    return string;
-  }
-
-  function sha256(data = "") {
-    const dataUint8Array =
-      typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
-    return aesjs.utils.hex.fromBytes(hash(dataUint8Array));
-  }
-
-  function sha256hmac(data = "", key = "") {
-    const dataUint8Array =
-      typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
-    const keyUint8Array =
-      typeof key === "object" ? key : aesjs.utils.utf8.toBytes(key);
-    return aesjs.utils.hex.fromBytes(hmac(keyUint8Array, dataUint8Array));
   }
 
   /*
