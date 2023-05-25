@@ -2,6 +2,10 @@
  * cryptou | MIT license | https://github.com/Ekwani-Consulting/cryptou
  *  UMD Crypto library (supports AMD, Node, CommonJS, modulejs, YUI, and browsers)
  *
+ * Minified with terser:
+ *   npm install terser -g
+ *   terser cryptou.js -m -c toplevel,sequences=false,drop_console=true -o cryptou.min.js
+ *
  * Public Methods:
  *
  * version
@@ -20,8 +24,8 @@
  * @returns {String} hex-encoded SHA-256 hash of data
  *
  * sha256hmac
- * @param {String|Object} key - UTF-8 string or Uint8Array
  * @param {String|Object} data - UTF-8 string or Uint8Array
+ * @param {String|Object} key - UTF-8 string or Uint8Array
  * @returns {String} hex-encoded SHA-256 hash of data with secret key applied
  *
  * encode
@@ -29,17 +33,17 @@
  * @returns {String} hex-encoded string
  *
  * decode
- * @param {String} hexString - hex-encoded string
+ * @param {String} data - hex-encoded string
  * @returns {String|Object|Boolean} anything JSON.parse() can return
  *
  * encrypt
  * @param {String|Object|Boolean} data - anything JSON.stringify() can process
- * @param {String} password
- * @returns {String} concatenated hex-encoded string in the form of: SALT_IV_ENCRYPTEDSTRING
+ * @param {String|Uint8Array} secret - pre-shared secret
+ * @returns {String} concatenated hex-encoded string in the form of SALT_IV_ENCRYPTEDDATA
  *
  * decrypt
- * @param {String} concatenatedHexString - concatenated hex-encoded string in the form of: SALT_IV_ENCRYPTEDSTRING
- * @param {String} password
+ * @param {String} data - concatenated hex-encoded string in the form of SALT_IV_ENCRYPTEDDATA
+ * @param {String|Uint8Array} secret - pre-shared secret
  * @returns {String|Object|Boolean} anything JSON.parse() can return
  *
  * ***********************************************************************************************
@@ -49,6 +53,7 @@
  * ClientRandom                         | MIT license           | https://github.com/verifyprovablyfair/ClientRandom
  * fast-sha256-js                       | Unlicense license     | https://github.com/dchest/fast-sha256-js
  * fid-umd                              | MIT license           | https://github.com/fidian/fid-umd
+ * terser                               | BSD 2-clause license  | https://github.com/terser/terser
  * UMD (Universal Module Definition)    | MIT license           | https://github.com/umdjs/umd
  *
  * ***********************************************************************************************
@@ -91,7 +96,7 @@
    * ***********************************************************************************************
    */
   function genrand() {
-    var rng_nums = new Uint32Array(2);
+    let rng_nums = new Uint32Array(2);
     if (
       typeof window === "object" &&
       window.crypto &&
@@ -1664,23 +1669,22 @@
     return aesjs.utils.hex.fromBytes(aesjs.padding.pkcs7.pad(bytes));
   }
 
-  function decode(hexString) {
+  function decode(data) {
     const bytes =
-      hexString && aesjs.utils.hex.toBytes(hexString)
-        ? aesjs.utils.hex.toBytes(hexString)
+      data && aesjs.utils.hex.toBytes(data)
+        ? aesjs.utils.hex.toBytes(data)
         : aesjs.utils.hex.toBytes("");
     const string = aesjs.utils.utf8.fromBytes(aesjs.padding.pkcs7.strip(bytes));
     return JSON.parse(string);
   }
 
-  function encrypt(data, password = "cryptou is AWES0ME!") {
-    if (
-      data === null ||
-      typeof data === "undefined" ||
-      typeof data === "function"
-    )
-      data = "";
-
+  function encrypt(data = "", secret) {
+    const password =
+      typeof secret === "string"
+        ? secret
+        : typeof secret === "object"
+        ? aesjs.utils.hex.fromBytes(secret)
+        : "cryptou is AWES0ME!";
     const salt = random(16);
     const rounds = 1024;
     const byteLength = 32;
@@ -1698,9 +1702,15 @@
     )}_${encode(iv)}_${aesjs.utils.hex.fromBytes(encryptedBytes)}`;
   }
 
-  function decrypt(concatenatedHexString, password = "cryptou is AWES0ME!") {
-    if (concatenatedHexString && concatenatedHexString.split("_").length == 3) {
-      const hexArray = concatenatedHexString.split("_");
+  function decrypt(data, secret) {
+    if (typeof data === "string" && data.split("_").length == 3) {
+      const password =
+        typeof secret === "string"
+          ? secret
+          : typeof secret === "object"
+          ? aesjs.utils.hex.fromBytes(secret)
+          : "cryptou is AWES0ME!";
+      const hexArray = data.split("_");
 
       const saltObj = decode(hexArray[0]);
       const saltBlock = [];
@@ -1753,11 +1763,11 @@
     return aesjs.utils.hex.fromBytes(hash(dataUint8Array));
   }
 
-  function sha256hmac(key = "", data = "") {
-    const keyUint8Array =
-      typeof key === "object" ? key : aesjs.utils.utf8.toBytes(key);
+  function sha256hmac(data = "", key = "") {
     const dataUint8Array =
       typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
+    const keyUint8Array =
+      typeof key === "object" ? key : aesjs.utils.utf8.toBytes(key);
     return aesjs.utils.hex.fromBytes(hmac(keyUint8Array, dataUint8Array));
   }
 
