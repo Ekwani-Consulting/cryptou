@@ -39,29 +39,29 @@ console.log("version", cryptou.version());
 
 ## Public Methods
 
-#### version()
+#### 🟢 version()
 
 @returns {String} cryptou version
 
-#### random(size)
+#### 🟢 random(size)
 
 @param {Integer} size - in bytes; default = 32
 
 @returns {Uint8Array} random entropy in specified byte size
 
-#### randomString(size)
+#### 🟢 randomString(size)
 
 @param {Integer} size - in chars; default = 32
 
 @returns {String} random alphanumeric+special string of char length specified
 
-#### sha256(data)
+#### 🟢 sha256(data)
 
 @param {String|Object} data - UTF-8 string or Uint8Array
 
 @returns {String} hex-encoded SHA-256 hash of data
 
-#### sha256hmac(data, key)
+#### 🟢 sha256hmac(data, key)
 
 @param {String|Object} data - UTF-8 string or Uint8Array
 
@@ -69,19 +69,19 @@ console.log("version", cryptou.version());
 
 @returns {String} hex-encoded SHA-256 hash of data with secret key applied
 
-#### encode(data)
+#### 🟢 encode(data)
 
 @param {String|Object|Boolean} data - anything JSON.stringify() can process
 
 @returns {String} hex-encoded string
 
-#### decode(data)
+#### 🟢 decode(data)
 
 @param {String} data - hex-encoded string
 
 @returns {String|Object|Boolean} anything JSON.parse() can return
 
-#### encrypt(data, secret)
+#### 🟢 encrypt(data, secret)
 
 @param {String|Object|Boolean} data - anything JSON.stringify() can process
 
@@ -89,7 +89,7 @@ console.log("version", cryptou.version());
 
 @returns {String} concatenated hex-encoded string in the form of SALT_IV_ENCRYPTEDDATA
 
-#### decrypt(data, secret)
+#### 🟢 decrypt(data, secret)
 
 @param {String} data - concatenated hex-encoded string in the form of SALT_IV_ENCRYPTEDDATA
 
