@@ -15,6 +15,15 @@
  * @param {Integer} size - in chars; default = 32
  * @returns {String} random alphanumeric+special string of char length specified
  *
+ * sha256
+ * @param {String|Object} data - UTF-8 string or Uint8Array
+ * @returns {String} hex-encoded SHA-256 hash of data
+ *
+ * sha256hmac
+ * @param {String|Object} key - UTF-8 string or Uint8Array
+ * @param {String|Object} data - UTF-8 string or Uint8Array
+ * @returns {String} hex-encoded SHA-256 hash of data with secret key applied
+ *
  * encode
  * @param {String|Object|Boolean} data - anything JSON.stringify() can process
  * @returns {String} hex-encoded string
@@ -95,6 +104,8 @@
       window.msCrypto.getRandomValues
     )
       window.msCrypto.getRandomValues(rng_nums); // IE
+    else if (typeof crypto === "object" && crypto.getRandomValues)
+      crypto.getRandomValues(rng_nums); // Node
     else
       rng_nums = [
         Math.floor(Math.random() * 4294967295),
@@ -1736,6 +1747,20 @@
     return string;
   }
 
+  function sha256(data = "") {
+    const dataUint8Array =
+      typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
+    return aesjs.utils.hex.fromBytes(hash(dataUint8Array));
+  }
+
+  function sha256hmac(key = "", data = "") {
+    const keyUint8Array =
+      typeof key === "object" ? key : aesjs.utils.utf8.toBytes(key);
+    const dataUint8Array =
+      typeof data === "object" ? data : aesjs.utils.utf8.toBytes(data);
+    return aesjs.utils.hex.fromBytes(hmac(keyUint8Array, dataUint8Array));
+  }
+
   /*
    * ***********************************************************************************************
    *
@@ -1747,6 +1772,8 @@
     version: version,
     random: random,
     randomString: randomString,
+    sha256: sha256,
+    sha256hmac: sha256hmac,
     encode: encode,
     decode: decode,
     encrypt: encrypt,
