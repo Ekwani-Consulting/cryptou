@@ -11,13 +11,27 @@
  * @param {Integer} size - in bytes; default = 32
  * @returns {Uint8Array} random entropy in specified byte size
  *
+ * randomString
+ * @param {Integer} size - in chars; default = 32
+ * @returns {String} random alphanumeric+special string of char length specified
+ *
  * encode
- * @param {String|Object} data - anything JSON.stringify() can process
+ * @param {String|Object|Boolean} data - anything JSON.stringify() can process
  * @returns {String} hex-encoded string
  *
  * decode
- * @param {String} hexstr - hex-encoded string
- * @returns {String|Object} anything JSON.parse() can return
+ * @param {String} hexString - hex-encoded string
+ * @returns {String|Object|Boolean} anything JSON.parse() can return
+ *
+ * encrypt
+ * @param {String|Object|Boolean} data - anything JSON.stringify() can process
+ * @param {String} password
+ * @returns {String} concatenated hex-encoded string in the form of: SALT_IV_ENCRYPTEDSTRING
+ *
+ * decrypt
+ * @param {String} concatenatedHexString - concatenated hex-encoded string in the form of: SALT_IV_ENCRYPTEDSTRING
+ * @param {String} password
+ * @returns {String|Object|Boolean} anything JSON.parse() can return
  *
  * ***********************************************************************************************
  * Sources:
@@ -193,8 +207,8 @@
     return pos;
   }
   // Hash implements SHA256 hash algorithm.
-  let Hash = /** @class */ (function () {
-    function Hash() {
+  class Hash {
+    constructor() {
       this.digestLength = digestLength;
       this.blockSize = blockSize;
       // Note: Int32Array is used instead of Uint32Array for performance reasons.
@@ -208,7 +222,7 @@
     }
     // Resets hash state making it possible
     // to re-use this instance to hash other data.
-    Hash.prototype.reset = function () {
+    reset() {
       this.state[0] = 0x6a09e667;
       this.state[1] = 0xbb67ae85;
       this.state[2] = 0x3c6ef372;
@@ -221,9 +235,9 @@
       this.bytesHashed = 0;
       this.finished = false;
       return this;
-    };
+    }
     // Cleans internal buffers and re-initializes hash state.
-    Hash.prototype.clean = function () {
+    clean() {
       for (let i = 0; i < this.buffer.length; i++) {
         this.buffer[i] = 0;
       }
@@ -231,7 +245,7 @@
         this.temp[i] = 0;
       }
       this.reset();
-    };
+    }
     // Updates hash state with the given data.
     //
     // Optionally, length of the data can be specified to hash
@@ -239,7 +253,7 @@
     //
     // Throws error when trying to update already finalized hash:
     // instance must be reset to use it again.
-    Hash.prototype.update = function (data, dataLength) {
+    update(data, dataLength) {
       if (dataLength === void 0) {
         dataLength = data.length;
       }
@@ -267,11 +281,11 @@
         dataLength--;
       }
       return this;
-    };
+    }
     // Finalizes hash state and puts hash into out.
     //
     // If hash was already finalized, puts the same value.
-    Hash.prototype.finish = function (out) {
+    finish(out) {
       if (!this.finished) {
         let bytesHashed = this.bytesHashed;
         let left = this.bufferLength;
@@ -300,34 +314,33 @@
         out[i * 4 + 3] = (this.state[i] >>> 0) & 0xff;
       }
       return this;
-    };
+    }
     // Returns the final hash digest.
-    Hash.prototype.digest = function () {
+    digest() {
       let out = new Uint8Array(this.digestLength);
       this.finish(out);
       return out;
-    };
+    }
     // Internal function for use in HMAC for optimization.
-    Hash.prototype._saveState = function (out) {
+    _saveState(out) {
       for (let i = 0; i < this.state.length; i++) {
         out[i] = this.state[i];
       }
-    };
+    }
     // Internal function for use in HMAC for optimization.
-    Hash.prototype._restoreState = function (from, bytesHashed) {
+    _restoreState(from, bytesHashed) {
       for (let i = 0; i < this.state.length; i++) {
         this.state[i] = from[i];
       }
       this.bytesHashed = bytesHashed;
       this.finished = false;
       this.bufferLength = 0;
-    };
-    return Hash;
-  })();
+    }
+  }
 
   // HMAC implements HMAC-SHA256 message authentication algorithm.
-  let HMAC = /** @class */ (function () {
-    function HMAC(key) {
+  class HMAC {
+    constructor(key) {
       this.inner = new Hash();
       this.outer = new Hash();
       this.blockSize = this.inner.blockSize;
@@ -359,26 +372,26 @@
     // Returns HMAC state to the state initialized with key
     // to make it possible to run HMAC over the other data with the same
     // key without creating a new instance.
-    HMAC.prototype.reset = function () {
+    reset() {
       this.inner._restoreState(this.istate, this.inner.blockSize);
       this.outer._restoreState(this.ostate, this.outer.blockSize);
       return this;
-    };
+    }
     // Cleans HMAC state.
-    HMAC.prototype.clean = function () {
+    clean() {
       for (let i = 0; i < this.istate.length; i++) {
         this.ostate[i] = this.istate[i] = 0;
       }
       this.inner.clean();
       this.outer.clean();
-    };
+    }
     // Updates state with provided data.
-    HMAC.prototype.update = function (data) {
+    update(data) {
       this.inner.update(data);
       return this;
-    };
+    }
     // Finalizes HMAC and puts the result in out.
-    HMAC.prototype.finish = function (out) {
+    finish(out) {
       if (this.outer.finished) {
         this.outer.finish(out);
       } else {
@@ -386,15 +399,14 @@
         this.outer.update(out, this.digestLength).finish(out);
       }
       return this;
-    };
+    }
     // Returns message authentication code.
-    HMAC.prototype.digest = function () {
+    digest() {
       let out = new Uint8Array(this.digestLength);
       this.finish(out);
       return out;
-    };
-    return HMAC;
-  })();
+    }
+  }
 
   // Returns SHA256 hash of data.
   function hash(data) {
@@ -1641,13 +1653,87 @@
     return aesjs.utils.hex.fromBytes(aesjs.padding.pkcs7.pad(bytes));
   }
 
-  function decode(hexstr) {
+  function decode(hexString) {
     const bytes =
-      hexstr && aesjs.utils.hex.toBytes(hexstr)
-        ? aesjs.utils.hex.toBytes(hexstr)
+      hexString && aesjs.utils.hex.toBytes(hexString)
+        ? aesjs.utils.hex.toBytes(hexString)
         : aesjs.utils.hex.toBytes("");
     const string = aesjs.utils.utf8.fromBytes(aesjs.padding.pkcs7.strip(bytes));
     return JSON.parse(string);
+  }
+
+  function encrypt(data, password = "cryptou is AWES0ME!") {
+    if (
+      data === null ||
+      typeof data === "undefined" ||
+      typeof data === "function"
+    )
+      data = "";
+
+    const salt = random(16);
+    const rounds = 1024;
+    const byteLength = 32;
+    const key = pbkdf2(password, salt, rounds, byteLength);
+    const iv = random(16);
+
+    const cbc = new aesjs.cbc(key, iv);
+
+    const string = data && JSON.stringify(data) ? JSON.stringify(data) : "";
+    const bytes = aesjs.utils.utf8.toBytes(string);
+    const encryptedBytes = cbc.encrypt(aesjs.padding.pkcs7.pad(bytes));
+
+    return `${encode(
+      salt
+    )}_${encode(iv)}_${aesjs.utils.hex.fromBytes(encryptedBytes)}`;
+  }
+
+  function decrypt(concatenatedHexString, password = "cryptou is AWES0ME!") {
+    if (concatenatedHexString && concatenatedHexString.split("_").length == 3) {
+      const hexArray = concatenatedHexString.split("_");
+
+      const saltObj = decode(hexArray[0]);
+      const saltBlock = [];
+      for (let i = 0; i < 16; i++) {
+        saltBlock.push(saltObj[i]);
+      }
+      const salt = new Uint8Array(saltBlock);
+
+      const rounds = 1024;
+      const byteLength = 32;
+      const key = pbkdf2(password, salt, rounds, byteLength);
+
+      const ivObj = decode(hexArray[1]);
+      const ivBlock = [];
+      for (let i = 0; i < 16; i++) {
+        ivBlock.push(ivObj[i]);
+      }
+      const iv = new Uint8Array(ivBlock);
+
+      const cbc = new aesjs.cbc(key, iv);
+
+      const encryptedHexString = hexArray[2];
+      const encryptedBytes = aesjs.utils.hex.toBytes(encryptedHexString);
+      const decryptedBytes = cbc.decrypt(encryptedBytes);
+      const decryptedString = aesjs.utils.utf8.fromBytes(
+        aesjs.padding.pkcs7.strip(decryptedBytes)
+      );
+
+      return JSON.parse(decryptedString);
+    } else {
+      return null;
+    }
+  }
+
+  function randomString(size = 32) {
+    // adapted from: https://stackoverflow.com/a/72711889
+    const charset =
+      "$123456789ABCDEFGH+JKLMN-P~RSTUVWXYZabcdefgh%jk*mn_p&rst#@wxyz";
+    const indexes = random(size);
+    let string = "";
+    for (const index of indexes) {
+      string += charset[index % charset.length];
+    }
+    return string;
   }
 
   /*
@@ -1660,7 +1746,10 @@
   return {
     version: version,
     random: random,
+    randomString: randomString,
     encode: encode,
     decode: decode,
+    encrypt: encrypt,
+    decrypt: decrypt,
   };
 });
