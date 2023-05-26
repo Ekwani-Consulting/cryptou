@@ -4,7 +4,7 @@
  *
  * Minified with terser:
  *   npm install terser -g
- *   terser cryptou.js -m -c toplevel,sequences=false,drop_console=true -o cryptou.min.js
+ *   terser cryptou.js -m -c toplevel,sequences=false,drop_console=true -o ./dist/cryptou.min.js
  *
  * Public Methods:
  *
@@ -1660,7 +1660,7 @@
    */
 
   function version() {
-    return "0.1.1";
+    return "0.2.0";
   }
 
   function random(size = 32) {
