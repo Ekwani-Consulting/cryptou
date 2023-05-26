@@ -31,7 +31,7 @@ console.log("version", cryptou.version());
 #### Browser
 
 ```html
-<script src="./cryptou.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/Ekwani-Consulting/cryptou@0.1.0/cryptou.min.js"></script>
 <script>
   console.log("version", cryptou.version());
 </script>
