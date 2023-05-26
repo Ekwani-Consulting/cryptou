@@ -1660,7 +1660,7 @@
    */
 
   function version() {
-    return "0.2.0";
+    return "0.2.1";
   }
 
   function random(size = 32) {
@@ -1698,18 +1698,23 @@
   }
 
   function encode(data) {
-    const string = data && JSON.stringify(data) ? JSON.stringify(data) : "";
-    const bytes = aesjs.utils.utf8.toBytes(string);
-    return aesjs.utils.hex.fromBytes(aesjs.padding.pkcs7.pad(bytes));
+    if (data && JSON.stringify(data)) {
+      const string = JSON.stringify(data);
+      const bytes = aesjs.padding.pkcs7.pad(aesjs.utils.utf8.toBytes(string));
+      return aesjs.utils.hex.fromBytes(bytes);
+    } else {
+      return null;
+    }
   }
 
   function decode(data) {
-    const bytes =
-      data && aesjs.utils.hex.toBytes(data)
-        ? aesjs.utils.hex.toBytes(data)
-        : aesjs.utils.hex.toBytes("");
-    const string = aesjs.utils.utf8.fromBytes(aesjs.padding.pkcs7.strip(bytes));
-    return JSON.parse(string);
+    if (typeof data === "string") {
+      const bytes = aesjs.padding.pkcs7.strip(aesjs.utils.hex.toBytes(data));
+      const string = aesjs.utils.utf8.fromBytes(bytes);
+      return JSON.parse(string);
+    } else {
+      return null;
+    }
   }
 
   function encrypt(data = "", secret) {
